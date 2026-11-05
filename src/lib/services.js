@@ -43,17 +43,29 @@ import {
   siYoutubemusic,
 } from 'simple-icons'
 
-function service(id, name, category, icon, billingCycle = 'monthly') {
-  return { id, name, category, icon, billingCycle }
+// The billing cycles each service actually offers, so the form only shows those. None of these
+// bill weekly. The first is filled in when the service is picked: the one most people pay.
+// Checked in November 2026. Plans differ by country: yearly is listed when the service sells it
+// in the Philippines or in most of its big markets. Plans the app can't track, such as 3-month
+// or 2-year ones, are left out.
+const MONTHLY_ONLY = ['monthly']
+const MONTHLY_OR_YEARLY = ['monthly', 'yearly']
+// Usually bought by the year, but monthly is offered too.
+const YEARLY_OR_MONTHLY = ['yearly', 'monthly']
+const YEARLY_ONLY = ['yearly']
+
+function service(id, name, category, icon, cycles = MONTHLY_OR_YEARLY) {
+  return { id, name, category, icon, cycles, billingCycle: cycles[0] }
 }
 
-// In the order the picker shows them: the most common first. The billing cycle is only yearly
-// where the service bills that way for most people. Either can be changed in the form.
+// In the order the picker shows them: the most common first.
 export const SERVICES = [
-  service('netflix', 'Netflix', 'Streaming', siNetflix),
+  service('netflix', 'Netflix', 'Streaming', siNetflix, MONTHLY_ONLY),
+  // Yearly Premium is offered in some countries only, the Philippines among them.
   service('spotify', 'Spotify', 'Music', siSpotify),
+  // The yearly plan is a prepaid year, offered in some countries.
   service('youtube-premium', 'YouTube Premium', 'Streaming', siYoutube),
-  service('icloud', 'iCloud+', 'Cloud Storage', siIcloud),
+  service('icloud', 'iCloud+', 'Cloud Storage', siIcloud, MONTHLY_ONLY),
   service('hbo-max', 'HBO Max', 'Streaming', siHbomax),
   service('claude', 'Claude', 'Software', siClaude),
   service('google-gemini', 'Google Gemini', 'Software', siGooglegemini),
@@ -73,15 +85,16 @@ export const SERVICES = [
   service('grammarly', 'Grammarly', 'Software', siGrammarly),
   service('paramount-plus', 'Paramount+', 'Streaming', siParamountplus),
   service('apple-arcade', 'Apple Arcade', 'Gaming', siApplearcade),
-  service('tidal', 'TIDAL', 'Music', siTidal),
+  // TIDAL stopped selling yearly plans in 2024.
+  service('tidal', 'TIDAL', 'Music', siTidal, MONTHLY_ONLY),
   service('deezer', 'Deezer', 'Music', siDeezer),
   service('audible', 'Audible', 'Other', siAudible),
   service('medium', 'Medium', 'News', siMedium),
-  service('nordvpn', 'NordVPN', 'Software', siNordvpn),
-  service('expressvpn', 'ExpressVPN', 'Software', siExpressvpn),
+  service('nordvpn', 'NordVPN', 'Software', siNordvpn, YEARLY_OR_MONTHLY),
+  service('expressvpn', 'ExpressVPN', 'Software', siExpressvpn, YEARLY_OR_MONTHLY),
   service('proton', 'Proton', 'Software', siProton),
-  service('1password', '1Password', 'Software', si1password, 'yearly'),
-  service('bitwarden', 'Bitwarden', 'Software', siBitwarden, 'yearly'),
+  service('1password', '1Password', 'Software', si1password, YEARLY_OR_MONTHLY),
+  service('bitwarden', 'Bitwarden', 'Software', siBitwarden, YEARLY_ONLY),
   service('strava', 'Strava', 'Fitness', siStrava),
   service('fitbit-premium', 'Fitbit Premium', 'Fitness', siFitbit),
   service('peloton', 'Peloton', 'Fitness', siPeloton),

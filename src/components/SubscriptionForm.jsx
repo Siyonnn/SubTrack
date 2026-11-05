@@ -15,6 +15,14 @@ const BILLING_CYCLES = [
   { value: 'yearly', label: 'Yearly' },
 ]
 
+// "Netflix only bills monthly." or "Spotify bills monthly or yearly."
+function cycleHint(service) {
+  const names = service.cycles.join(' or ')
+  return service.cycles.length === 1
+    ? `${service.name} only bills ${names}.`
+    : `${service.name} bills ${names}.`
+}
+
 function FieldError({ id, message }) {
   if (!message) return null
   return (
@@ -55,6 +63,13 @@ export default function SubscriptionForm({ subscription, onSave, onCancel }) {
 
   // Later due dates are counted from the first one, so the schedule is fixed once a payment exists.
   const hasPayments = Boolean(subscription?.lastPaidDate)
+
+  // A picked service only offers the cycles it really bills in. The current one always stays in
+  // the list, so a subscription saved before this (or one whose cycle is fixed by a payment) still
+  // shows what it has instead of silently changing.
+  const cycleOptions = BILLING_CYCLES.filter(
+    ({ value }) => !service || service.cycles.includes(value) || value === billingCycle,
+  )
 
   // A subscription saved before the date limit existed keeps its own date as the limit.
   const earliest = earliestFirstDueDate()
@@ -253,13 +268,19 @@ export default function SubscriptionForm({ subscription, onSave, onCancel }) {
             value={billingCycle}
             onChange={(e) => setBillingCycle(e.target.value)}
             disabled={hasPayments}
+            aria-describedby={service ? 'hint-cycle' : undefined}
           >
-            {BILLING_CYCLES.map((cycle) => (
+            {cycleOptions.map((cycle) => (
               <option key={cycle.value} value={cycle.value}>
                 {cycle.label}
               </option>
             ))}
           </select>
+          {service && (
+            <span id="hint-cycle" className="field-hint">
+              {cycleHint(service)}
+            </span>
+          )}
         </label>
 
         <label>

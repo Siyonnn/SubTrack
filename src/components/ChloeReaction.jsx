@@ -48,10 +48,10 @@ function Effect({ type }) {
       </span>
     )
   }
-  if (type === 'question' || type === 'bark') {
+  if (type === 'bark') {
     return (
       <span className={`chloe-effect mark mark-${type}`} aria-hidden="true">
-        {type === 'question' ? '?' : '!'}
+        !
       </span>
     )
   }

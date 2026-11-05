@@ -7,12 +7,34 @@ describe('SERVICES', () => {
     expect(new Set(SERVICES.map((s) => s.id)).size).toBe(SERVICES.length)
     for (const s of SERVICES) {
       expect(CATEGORIES).toContain(s.category)
-      expect(['weekly', 'monthly', 'yearly']).toContain(s.billingCycle)
       expect(s.icon.path).toMatch(/^[Mm]/)
       expect(s.icon.hex).toMatch(/^[0-9A-F]{6}$/)
       // The Firestore rules cap the stored id at 40 characters.
       expect(s.id.length).toBeLessThanOrEqual(40)
     }
+  })
+})
+
+describe('billing cycles', () => {
+  it('lists only cycles the app tracks, none of them weekly, and fills in the first', () => {
+    for (const s of SERVICES) {
+      expect(s.cycles.length).toBeGreaterThan(0)
+      expect(new Set(s.cycles).size).toBe(s.cycles.length)
+      for (const cycle of s.cycles) expect(['monthly', 'yearly']).toContain(cycle)
+      expect(s.billingCycle).toBe(s.cycles[0])
+    }
+  })
+
+  it('offers only the plans a service sells', () => {
+    expect(findService('netflix').cycles).toEqual(['monthly'])
+    expect(findService('icloud').cycles).toEqual(['monthly'])
+    expect(findService('tidal').cycles).toEqual(['monthly'])
+    expect(findService('bitwarden').cycles).toEqual(['yearly'])
+  })
+
+  it('offers both where a service sells both, starting with the usual one', () => {
+    expect(findService('spotify').cycles).toEqual(['monthly', 'yearly'])
+    expect(findService('1password').cycles).toEqual(['yearly', 'monthly'])
   })
 })
 

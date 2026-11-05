@@ -15,7 +15,7 @@ import {
 import { turnOffReminders } from '../lib/pushReminders.js'
 import { formatDate } from '../lib/format.js'
 import { isNativeApp } from '../lib/platform.js'
-import { Chloe, Logo } from './Brand.jsx'
+import { Chloe, ChloePose, Logo } from './Brand.jsx'
 import ChloeReaction from './ChloeReaction.jsx'
 import ConfirmDialog from './ConfirmDialog.jsx'
 import ExpenseSummary from './ExpenseSummary.jsx'
@@ -213,7 +213,7 @@ export default function Dashboard({ user }) {
         send(
           undoLastPayment(user.uid, subscription),
           `Could not undo the payment for ${subscription.subscriptionName}. It is still recorded.`,
-          ['curious', 'question', `Huh? Okay, I took back that ${subscription.subscriptionName} payment.`],
+          ['thinking', null, `Huh? Okay, I took back that ${subscription.subscriptionName} payment.`],
         )
         setConfirming(null)
       },
@@ -318,7 +318,7 @@ export default function Dashboard({ user }) {
           <p className="muted">{!loadFailed && 'Loading…'}</p>
         ) : (
           <div className="empty-state">
-            <Chloe mood="curious" size={88} />
+            <ChloePose mood="thinking" size={128} />
             <p className="muted">
               No subscriptions yet. Add your first one and Chloe will keep an eye on when it's due.
             </p>

@@ -22,6 +22,7 @@ Computed, not stored: `nextPaymentDate`, status, overdue count, expense totals.
 
 - Adding a subscription starts with a searchable grid of well-known services, plus **Other**.
 - Picking a service fills in its name, category, and usual billing cycle, and shows its logo. The name and everything else can still be changed, and renaming keeps the logo.
+- The billing cycle only offers the cycles that service really bills in, from `cycles` in `src/lib/services.js`: Netflix, iCloud+ and TIDAL are monthly only, Bitwarden is yearly only, and the rest are monthly or yearly. None bill weekly. A subscription saved earlier with another cycle keeps it as an option, so editing never changes it silently. **Other** offers weekly, monthly, and yearly.
 - Price and the first payment date are always entered by the user: they depend on the plan and the day the person signed up.
 - Only services with an official logo in Simple Icons are listed, so a picked service never shows a stand-in. Popular services without one (such as Disney+, Prime Video, ChatGPT, Canva, Viu) are added with **Other** and an uploaded picture.
 - **Other** can have an uploaded picture. It is cropped to the middle square and shrunk to 128×128 before saving, so it is a few kilobytes and needs no separate file storage.
@@ -79,9 +80,9 @@ Evaluated in this order:
 
 ## Chloe
 
-Chloe the dachshund is decorative: anything she shows is also written as text.
+Chloe the dachshund is decorative: anything she shows is also written as text. She is drawn from the artwork in `art/chloe` (`src/components/Chloe.jsx`), as a head (`Chloe`) or nose to tail (`ChloePose`).
 
-- Moods: curious, alert, napping, happy, sad. Each has its own idle animation (blinking, head tilts, ear twitches, sniffing, breathing with floating Z's, hopping, a rolling tear). Idle animations stop after about half a minute to a minute so the page isn't redrawing forever, which would drain a phone's battery.
+- Moods: napping, happy, sad, and thinking come from the sleeping, celebrating, crying, and thinking drawings; curious and alert are drawn from the same parts in the same style. Each has its own idle animation: blinking, head tilts, ear twitches, sniffing, breathing that blows up her snot bubble, floating Z's, bouncing thought dots, hopping with a rocking party hat and twinkling sparkles, and falling tears. The full-body poses also wag or sway her tail. Idle animations stop after about half a minute to a minute so the page isn't redrawing forever, which would drain a phone's battery.
 - Her eyes follow the pointer. Tapping her makes her wiggle, sends up a heart, and restarts her idle animations.
 - When her mood changes on screen, such as from alert to napping once everything is paid, she perks up into the new one.
 - She reacts to actions from the bottom corner, with a speech bubble that screen readers announce:
@@ -91,11 +92,12 @@ Chloe the dachshund is decorative: anything she shows is also written as text.
   | Add a subscription | happy | hearts |
   | Edit a subscription | curious | none |
   | Mark paid | happy | confetti |
-  | Undo a payment | curious | ? |
-  | Delete a subscription | sad | tear |
+  | Undo a payment | thinking | thought bubble |
+  | Delete a subscription | sad | tears |
   | Turn reminders on / off | alert / napping | ! / none |
 
 - If the change fails, the problem notice replaces her, so she never cheers for a change that wasn't kept.
+- Her colors are fixed, as in the artwork. Lines drawn on the page around her (Z's, wag lines) and the edges of her back legs and tail turn light on the dark theme so they stay visible.
 - When the device asks for reduced motion, nothing moves: she still shows her mood and message, without the animations.
 
 ## Android app

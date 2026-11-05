@@ -1,4 +1,4 @@
-import { Chloe, Logo, LogoMark } from './Brand.jsx'
+import { Chloe, ChloePose, Logo, LogoMark } from './Brand.jsx'
 import '../landing.css'
 
 // The same sample subscriptions as the log in preview, so the numbers on both pages agree.
@@ -264,11 +264,11 @@ export default function Landing({ onLogIn, onSignUp }) {
         <section className="chloe-section reveal" aria-labelledby="chloe-title">
           <div className="chloe-moods" aria-hidden="true">
             <figure>
-              <Chloe mood="alert" size={96} />
+              <ChloePose mood="alert" size={150} />
               <figcaption>Something's due</figcaption>
             </figure>
             <figure>
-              <Chloe mood="napping" size={96} />
+              <ChloePose mood="napping" size={150} />
               <figcaption>All paid</figcaption>
             </figure>
           </div>

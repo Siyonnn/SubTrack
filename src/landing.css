@@ -590,6 +590,13 @@ button.inverse {
   border-radius: 14px;
 }
 
+/* Her full-body poses shrink to fit two side by side on a phone. */
+.chloe-moods svg {
+  width: 100%;
+  max-width: 150px;
+  height: auto;
+}
+
 .chloe-moods figcaption {
   font-family: var(--font-mono);
   font-size: 0.6875rem;
@@ -817,5 +824,39 @@ button.inverse {
 
   .faq details p {
     padding-right: 0;
+  }
+}
+
+/* On a phone the logo, "Log in", and "Get started" don't fit side by side at full size, which
+   pushed the button off the right edge. A smaller logo and tighter gaps fit a 360px screen. */
+@media (max-width: 420px) {
+  .landing-nav .logo {
+    gap: 8px;
+  }
+
+  .landing-nav .logo-mark {
+    width: 30px;
+    height: 30px;
+  }
+
+  .landing-nav .wordmark {
+    font-size: clamp(1rem, 5vw, 1.25rem);
+  }
+
+  .landing-nav-actions {
+    gap: 12px;
+  }
+}
+
+/* On the smallest phones only the ticket mark is left, so both buttons stay whole. The name is
+   still there for screen readers. */
+@media (max-width: 340px) {
+  .landing-nav .wordmark {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
 }
