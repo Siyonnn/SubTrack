@@ -77,6 +77,27 @@ Evaluated in this order:
 - Browsers get data-only messages that `public/reminders-sw.js` shows. The Android app gets messages with a notification part, so Android shows them itself, even while the app is closed. Records with no platform were saved before the app existed and count as `web`.
 - iPhones need the site added to the Home Screen first.
 
+## Chloe
+
+Chloe the dachshund is decorative: anything she shows is also written as text.
+
+- Moods: curious, alert, napping, happy, sad. Each has its own idle animation (blinking, head tilts, ear twitches, sniffing, breathing with floating Z's, hopping, a rolling tear). Idle animations stop after about half a minute to a minute so the page isn't redrawing forever, which would drain a phone's battery.
+- Her eyes follow the pointer. Tapping her makes her wiggle, sends up a heart, and restarts her idle animations.
+- When her mood changes on screen, such as from alert to napping once everything is paid, she perks up into the new one.
+- She reacts to actions from the bottom corner, with a speech bubble that screen readers announce:
+
+  | Action | Mood | Effect |
+  |---|---|---|
+  | Add a subscription | happy | hearts |
+  | Edit a subscription | curious | none |
+  | Mark paid | happy | confetti |
+  | Undo a payment | curious | ? |
+  | Delete a subscription | sad | tear |
+  | Turn reminders on / off | alert / napping | ! / none |
+
+- If the change fails, the problem notice replaces her, so she never cheers for a change that wasn't kept.
+- When the device asks for reduced motion, nothing moves: she still shows her mood and message, without the animations.
+
 ## Android app
 
 - The same React code, packaged with Capacitor as a native Android app (`android/`). `src/lib/platform.js` tells the two apart.

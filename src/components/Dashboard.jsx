@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { flushSync } from 'react-dom'
 import { signOut } from 'firebase/auth'
 import { auth } from '../firebase.js'
@@ -16,6 +16,7 @@ import { turnOffReminders } from '../lib/pushReminders.js'
 import { formatDate } from '../lib/format.js'
 import { isNativeApp } from '../lib/platform.js'
 import { Chloe, Logo } from './Brand.jsx'
+import ChloeReaction from './ChloeReaction.jsx'
 import ConfirmDialog from './ConfirmDialog.jsx'
 import ExpenseSummary from './ExpenseSummary.jsx'
 import Filters from './Filters.jsx'
@@ -105,28 +106,62 @@ export default function Dashboard({ user }) {
     )
   }, [user.uid, loadAttempt])
 
+  // Chloe pops up in the corner to react to what was just done. Each reaction gets a new id, so
+  // a second action right after the first starts her over instead of being ignored.
+  const [reaction, setReaction] = useState(null)
+  const reactionCount = useRef(0)
+  const clearReaction = useCallback(() => setReaction(null), [])
+
   // Firestore shows a change in the list straight away and sends it in the background. While
   // offline it keeps the change queued and its promise never settles, so nothing here waits for
   // the server. If the server refuses a change, Firestore takes it back out of the list and the
-  // notice says so.
-  function send(write, failureMessage) {
+  // notice says so, which also sends Chloe away (see the end of the page).
+  function send(write, failureMessage, reactionToShow) {
+    const id = react(reactionToShow)
+    write.catch(() => {
+      // Her reaction to the change that failed is dropped, so it can't come back after the
+      // notice is dismissed. A newer one, for a later action, stays.
+      setReaction((current) => (current?.id === id ? null : current))
+      setNotice(failureMessage)
+    })
+  }
+
+  // An old problem notice goes away, since something new has just worked.
+  function react([mood, effect, message]) {
     setNotice('')
-    write.catch(() => setNotice(failureMessage))
+    reactionCount.current += 1
+    setReaction({ id: reactionCount.current, mood, effect, message })
+    return reactionCount.current
   }
 
   function handleSave(data) {
-    const write =
-      editing === 'new'
-        ? addSubscription(user.uid, data)
-        : updateSubscription(user.uid, editing.id, data)
-    send(write, `Could not save ${data.subscriptionName}. The change was not kept.`)
+    const name = data.subscriptionName
+    if (editing === 'new') {
+      send(
+        addSubscription(user.uid, data),
+        `Could not save ${name}. The change was not kept.`,
+        ['happy', 'hearts', `Added ${name}! I'll keep my nose on it.`],
+      )
+    } else {
+      send(
+        updateSubscription(user.uid, editing.id, data),
+        `Could not save ${name}. The change was not kept.`,
+        ['curious', null, `Got it. ${name} is updated.`],
+      )
+    }
     setEditing(null)
   }
 
   function pay(subscription, count) {
+    const name = subscription.subscriptionName
     send(
       recordPayments(user.uid, subscription, count),
-      `Could not record the payment for ${subscription.subscriptionName}. It was not kept.`,
+      `Could not record the payment for ${name}. It was not kept.`,
+      [
+        'happy',
+        'confetti',
+        count > 1 ? `${count} payments for ${name}, all paid. Good human!` : `${name} is paid. Good human!`,
+      ],
     )
   }
 
@@ -178,6 +213,7 @@ export default function Dashboard({ user }) {
         send(
           undoLastPayment(user.uid, subscription),
           `Could not undo the payment for ${subscription.subscriptionName}. It is still recorded.`,
+          ['curious', 'question', `Huh? Okay, I took back that ${subscription.subscriptionName} payment.`],
         )
         setConfirming(null)
       },
@@ -199,6 +235,7 @@ export default function Dashboard({ user }) {
         send(
           deleteSubscription(user.uid, subscription.id),
           `Could not delete ${subscription.subscriptionName}. It is still in your list.`,
+          ['sad', null, `Bye, ${subscription.subscriptionName}. One less bill to sniff out.`],
         )
         // The heading goes away with the last card, so use the button that is always there.
         closeConfirmAndFocus(subscriptions.length > 1 ? headingRef : addButtonRef)
@@ -244,7 +281,13 @@ export default function Dashboard({ user }) {
         </h1>
         <div className="topbar-account">
           <span className="muted">{user.email}</span>
-          <RemindersToggle uid={user.uid} onMessage={setNotice} />
+          <RemindersToggle
+            uid={user.uid}
+            onMessage={setNotice}
+            onChange={(isOn, message) =>
+              react(isOn ? ['alert', 'bark', message] : ['napping', null, message])
+            }
+          />
           <button type="button" className="secondary small" onClick={askToLogOut}>
             Log out
           </button>
@@ -326,6 +369,14 @@ export default function Dashboard({ user }) {
       )}
 
       {confirming && <ConfirmDialog {...confirming} onCancel={() => setConfirming(null)} />}
+
+      {/* Always on the page, so screen readers announce what Chloe says when she appears.
+          A problem notice takes her place: she shouldn't cheer for a change that wasn't kept. */}
+      <div className="chloe-reaction-region" role="status">
+        {reaction && !notice && (
+          <ChloeReaction key={reaction.id} reaction={reaction} onDone={clearReaction} />
+        )}
+      </div>
 
       {notice && (
         <div className="toast" role="alert">

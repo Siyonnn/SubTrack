@@ -309,6 +309,487 @@ input[aria-invalid='true'] {
   gap: 16px;
 }
 
+/* Chloe's parts. In SVG, transform-origin in px is in the drawing's own units (200 x 200). */
+
+.chloe {
+  overflow: visible;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.chloe-ear-left {
+  transform-origin: 66px 64px;
+  --flap: -18deg;
+  --twitch: -9deg;
+}
+
+.chloe-ear-right {
+  transform-origin: 134px 64px;
+  --flap: 18deg;
+  --twitch: 9deg;
+}
+
+.chloe-stage,
+.chloe-body {
+  transform-origin: 100px 160px;
+}
+
+.chloe-eye,
+.chloe-nose,
+.chloe-tear,
+.chloe-zzz text,
+.chloe-boop-heart {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+/* Set by Brand.jsx as the pointer moves, so she watches it. */
+.chloe-pupil {
+  transform: translate(var(--look-x, 0px), var(--look-y, 0px));
+  transition: transform 160ms ease-out;
+}
+
+/* Sad ears fall outward, flat against her head. */
+.chloe-sad .chloe-ear-left {
+  transform: rotate(14deg);
+}
+
+.chloe-sad .chloe-ear-right {
+  transform: rotate(-14deg);
+}
+
+/* The heart only appears as part of the boop animation. */
+.chloe-boop-heart {
+  opacity: 0;
+}
+
+/* Chloe reacting to an action: pops up in the corner with a speech bubble. */
+
+.chloe-reaction-region {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 10;
+  max-width: calc(100vw - 32px);
+  pointer-events: none;
+}
+
+.chloe-reaction {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+/* Above the bubble, so her ? and ! aren't hidden behind it. */
+.chloe-reaction-pet {
+  position: relative;
+  z-index: 1;
+  flex-shrink: 0;
+  width: 72px;
+  height: 72px;
+}
+
+.chloe-bubble {
+  max-width: min(260px, calc(100vw - 32px - 78px));
+  margin: 0 0 24px;
+  padding: 10px 14px;
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  /* The square corner points at Chloe, like the tail of a speech bubble. */
+  border-radius: 16px 16px 16px 4px;
+  box-shadow: 0 10px 30px rgb(21 23 43 / 0.18);
+  font-size: 0.9375rem;
+  line-height: 1.35;
+}
+
+/* Flourishes around her. Only the ? and ! show without motion; the rest only make sense moving. */
+.chloe-effect {
+  position: absolute;
+  inset: 0;
+  display: none;
+  pointer-events: none;
+}
+
+.chloe-effect.mark {
+  display: block;
+  inset: -16px -8px auto auto;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 1.75rem;
+  line-height: 1;
+  color: var(--accent);
+}
+
+.chloe-effect.mark-bark {
+  color: var(--danger);
+}
+
+.confetti {
+  position: absolute;
+  left: 50%;
+  top: 45%;
+  width: 8px;
+  height: 8px;
+  margin: -4px;
+  border-radius: 2px;
+  background: var(--color);
+  opacity: 0;
+}
+
+.confetti.round {
+  border-radius: 50%;
+}
+
+.float-heart {
+  position: absolute;
+  left: 50%;
+  top: 6%;
+  width: 18px;
+  height: 18px;
+  margin-left: -9px;
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* Her idle animations play for about half a minute to a minute, then she settles. Moving
+     forever would keep the page redrawing, which drains a phone's battery while the dashboard
+     is open. She comes alive again when her mood changes, when she reacts, or when tapped. */
+
+  /* Every mood with open eyes blinks now and then. */
+  .chloe-eye {
+    animation: chloe-blink 5s 12;
+  }
+
+  /* Curious: tilts her head as if listening. */
+  .chloe-curious .chloe-body {
+    animation: chloe-tilt 6s ease-in-out 5;
+  }
+
+  /* Alert: ears twitch and her nose sniffs the air. */
+  .chloe-alert .chloe-ear {
+    animation: chloe-ear-twitch 2.8s ease-in-out 10;
+  }
+
+  .chloe-alert .chloe-ear-right {
+    animation-delay: 0.3s;
+  }
+
+  .chloe-alert .chloe-nose {
+    animation: chloe-sniff 1.8s ease-in-out 15;
+  }
+
+  /* Napping: slow breaths, and Z's drift up one after another. */
+  .chloe-napping .chloe-body {
+    animation: chloe-breathe 3.6s ease-in-out 10;
+  }
+
+  /* Hidden only while waiting to start, so they stay as a still "zzz" once they stop drifting. */
+  .chloe-napping .chloe-zzz text {
+    animation: chloe-zzz 3s ease-in 10 backwards;
+  }
+
+  .chloe-napping .chloe-zzz text:nth-child(2) {
+    animation-delay: 1s;
+  }
+
+  .chloe-napping .chloe-zzz text:nth-child(3) {
+    animation-delay: 2s;
+  }
+
+  /* Happy: hops with her ears flapping. */
+  .chloe-happy .chloe-body {
+    animation: chloe-hop 1.2s cubic-bezier(0.3, 0.7, 0.4, 1) 4;
+  }
+
+  .chloe-happy .chloe-ear {
+    animation: chloe-flap 0.3s ease-in-out 14 alternate;
+  }
+
+  /* Sad: sinks a little, and a tear rolls down. */
+  .chloe-sad .chloe-body {
+    animation: chloe-droop 1s ease-out both;
+  }
+
+  .chloe-sad .chloe-tear {
+    animation: chloe-tear 2.2s ease-in 0.6s 3 both;
+  }
+
+  /* Perks up when her mood changes on screen. */
+  .chloe-stage.is-entering {
+    animation: chloe-perk 600ms cubic-bezier(0.3, 1.5, 0.5, 1);
+  }
+
+  /* Tapped: wiggles, and a heart floats up. */
+  .chloe.is-booped .chloe-stage {
+    animation: chloe-wiggle 500ms ease-in-out;
+  }
+
+  .chloe-boop-heart {
+    animation: chloe-heart 900ms ease-out forwards;
+  }
+
+  /* The reaction pops up from below, then drops away. */
+  .chloe-reaction {
+    animation: chloe-reaction-in 450ms cubic-bezier(0.2, 1.4, 0.4, 1) both;
+  }
+
+  .chloe-reaction.is-leaving {
+    animation: chloe-reaction-out 300ms ease-in forwards;
+  }
+
+  .chloe-bubble {
+    transform-origin: bottom left;
+    animation: chloe-bubble-in 300ms cubic-bezier(0.2, 1.4, 0.4, 1) 150ms both;
+  }
+
+  .chloe-effect {
+    display: block;
+  }
+
+  .confetti {
+    animation: chloe-confetti 900ms cubic-bezier(0.15, 0.7, 0.3, 1) calc(150ms + var(--delay))
+      forwards;
+  }
+
+  .float-heart {
+    animation: chloe-float-heart 1.6s ease-out calc(200ms + var(--delay)) forwards;
+  }
+
+  .chloe-effect.mark {
+    animation:
+      chloe-mark 600ms cubic-bezier(0.2, 1.6, 0.4, 1) 250ms both,
+      chloe-wobble 1.2s ease-in-out 900ms 3;
+  }
+}
+
+@keyframes chloe-blink {
+  0%,
+  92%,
+  100% {
+    transform: scaleY(1);
+  }
+  95% {
+    transform: scaleY(0.1);
+  }
+}
+
+@keyframes chloe-tilt {
+  0%,
+  35%,
+  75%,
+  100% {
+    transform: rotate(0);
+  }
+  45%,
+  65% {
+    transform: rotate(-7deg);
+  }
+}
+
+@keyframes chloe-ear-twitch {
+  0%,
+  78%,
+  88%,
+  100% {
+    transform: rotate(0);
+  }
+  83%,
+  93% {
+    transform: rotate(var(--twitch));
+  }
+}
+
+@keyframes chloe-sniff {
+  0%,
+  55%,
+  68%,
+  80%,
+  100% {
+    transform: none;
+  }
+  62%,
+  74% {
+    transform: translateY(-2px) scale(1.1);
+  }
+}
+
+@keyframes chloe-breathe {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.025, 1.045);
+  }
+}
+
+@keyframes chloe-zzz {
+  0% {
+    opacity: 0;
+    transform: translate(0, 6px) scale(0.6);
+  }
+  25% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(10px, -22px) scale(1.15);
+  }
+}
+
+@keyframes chloe-hop {
+  0%,
+  60%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  10% {
+    transform: translateY(3px) scale(1.07, 0.93);
+  }
+  30% {
+    transform: translateY(-22px) scale(0.96, 1.05);
+  }
+  50% {
+    transform: translateY(0) scale(1.05, 0.95);
+  }
+}
+
+@keyframes chloe-flap {
+  to {
+    transform: rotate(var(--flap));
+  }
+}
+
+@keyframes chloe-droop {
+  to {
+    transform: translateY(7px) scale(0.98);
+  }
+}
+
+@keyframes chloe-tear {
+  0% {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.6);
+  }
+  20% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(22px);
+  }
+}
+
+@keyframes chloe-perk {
+  40% {
+    transform: translateY(-14px) scale(1.04);
+  }
+}
+
+@keyframes chloe-wiggle {
+  20% {
+    transform: rotate(-9deg);
+  }
+  40% {
+    transform: rotate(8deg);
+  }
+  60% {
+    transform: rotate(-5deg);
+  }
+  80% {
+    transform: rotate(3deg);
+  }
+}
+
+@keyframes chloe-heart {
+  0% {
+    opacity: 0;
+    transform: translateY(8px) scale(0.4);
+  }
+  25% {
+    opacity: 1;
+    transform: translateY(0) scale(1.2);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-34px) scale(0.9);
+  }
+}
+
+@keyframes chloe-reaction-in {
+  from {
+    opacity: 0;
+    transform: translateY(48px) scale(0.9);
+  }
+}
+
+@keyframes chloe-reaction-out {
+  to {
+    opacity: 0;
+    transform: translateY(32px) scale(0.95);
+  }
+}
+
+@keyframes chloe-bubble-in {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+}
+
+@keyframes chloe-confetti {
+  0% {
+    opacity: 1;
+    transform: rotate(var(--angle)) translateY(0) scale(0.3);
+  }
+  70% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: rotate(var(--angle)) translateY(calc(var(--distance) * -1)) rotate(200deg) scale(1);
+  }
+}
+
+@keyframes chloe-float-heart {
+  0% {
+    opacity: 0;
+    transform: translate(var(--x), 12px) scale(0.4);
+  }
+  20% {
+    opacity: 1;
+    transform: translate(var(--x), 0) scale(1.1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(calc(var(--x) * 1.5), -48px) scale(0.9);
+  }
+}
+
+@keyframes chloe-mark {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.3) rotate(-20deg);
+  }
+}
+
+@keyframes chloe-wobble {
+  0%,
+  100% {
+    transform: rotate(0);
+  }
+  50% {
+    transform: rotate(12deg);
+  }
+}
+
 .empty-state p {
   max-width: 34ch;
 }

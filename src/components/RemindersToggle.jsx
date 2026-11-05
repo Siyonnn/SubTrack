@@ -14,7 +14,8 @@ const BLOCKED_MESSAGE = isNativeApp
   : "Notifications are blocked for this site. Allow them in your browser's site settings, then try again."
 
 // Hidden where push can't be received, so it never offers something that won't work.
-export default function RemindersToggle({ uid, onMessage }) {
+// onChange(isOn, message) reports a change that worked; onMessage(message) reports a problem.
+export default function RemindersToggle({ uid, onMessage, onChange }) {
   const [isSupported, setIsSupported] = useState(false)
   const [isOn, setIsOn] = useState(false)
   const [isBusy, setIsBusy] = useState(false)
@@ -46,11 +47,12 @@ export default function RemindersToggle({ uid, onMessage }) {
       if (isOn) {
         await turnOffReminders(uid)
         setIsOn(false)
-        onMessage(`Reminders are off for ${DEVICE}.`)
+        onChange(false, `Reminders are off for ${DEVICE}. No more barking.`)
       } else if (await turnOnReminders(uid)) {
         setIsOn(true)
-        onMessage(
-          `Reminders are on for ${DEVICE}. You will get one 3 days before each payment and on the day it is due.`,
+        onChange(
+          true,
+          `Reminders are on for ${DEVICE}. I'll bark 3 days before each payment and on the day it's due.`,
         )
       } else {
         onMessage(BLOCKED_MESSAGE)
