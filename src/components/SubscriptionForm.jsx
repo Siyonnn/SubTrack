@@ -1,7 +1,17 @@
 import { useEffect, useRef, useState } from 'react'
 import { todayString } from '../lib/billing.js'
 import { CATEGORIES } from '../lib/categories.js'
+import { formatPrice } from '../lib/format.js'
 import { shrinkImage } from '../lib/imageFile.js'
+import {
+  fillFromPlan,
+  findPlan,
+  planCycles,
+  planPrice,
+  plansFor,
+  plansShownFor,
+  priceSource,
+} from '../lib/plans.js'
 import { findService } from '../lib/services.js'
 import { MAX_PRICE, earliestFirstDueDate, validateSubscription } from '../lib/validation.js'
 import ServicePicker from './ServicePicker.jsx'
@@ -14,6 +24,14 @@ const BILLING_CYCLES = [
   { value: 'monthly', label: 'Monthly' },
   { value: 'yearly', label: 'Yearly' },
 ]
+
+const PER = { weekly: 'week', monthly: 'month', yearly: 'year' }
+
+// "Duo — ₱239.00/month", or just "Duo" when it isn't sold for this currency and cycle.
+function planLabel(plan, currency, cycle) {
+  const amount = planPrice(plan, currency, cycle)
+  return amount === null ? plan.name : `${plan.name} — ${formatPrice(amount, currency)}/${PER[cycle]}`
+}
 
 // "Netflix only bills monthly." or "Spotify bills monthly or yearly."
 function cycleHint(service) {
@@ -38,6 +56,10 @@ export default function SubscriptionForm({ subscription, onSave, onCancel }) {
   const [isPicking, setIsPicking] = useState(!subscription)
   const [hasPicked, setHasPicked] = useState(Boolean(subscription))
   const [serviceId, setServiceId] = useState(subscription?.serviceId ?? null)
+  const [planId, setPlanId] = useState(subscription?.planId ?? null)
+  // True while the price is the one a plan filled in, so it follows the plan when the currency or
+  // cycle changes. Typing a price turns it off, and a typed price is never overwritten.
+  const [priceFollowsPlan, setPriceFollowsPlan] = useState(false)
   const [subscriptionName, setSubscriptionName] = useState(subscription?.subscriptionName ?? '')
   const [image, setImage] = useState(subscription?.image ?? '')
   const [imageError, setImageError] = useState('')
@@ -48,6 +70,7 @@ export default function SubscriptionForm({ subscription, onSave, onCancel }) {
   const [firstDueDate, setFirstDueDate] = useState(subscription?.firstDueDate ?? todayString())
   const [errors, setErrors] = useState({})
   const service = findService(serviceId)
+  const plan = findPlan(serviceId, planId)
 
   const formRef = useRef(null)
   const fileRef = useRef(null)
@@ -67,9 +90,17 @@ export default function SubscriptionForm({ subscription, onSave, onCancel }) {
   // A picked service only offers the cycles it really bills in. The current one always stays in
   // the list, so a subscription saved before this (or one whose cycle is fixed by a payment) still
   // shows what it has instead of silently changing.
+  // A chosen plan narrows it further, to the cycles that plan is sold in.
   const cycleOptions = BILLING_CYCLES.filter(
-    ({ value }) => !service || service.cycles.includes(value) || value === billingCycle,
+    ({ value }) =>
+      value === billingCycle ||
+      ((!service || service.cycles.includes(value)) && (!plan || planCycles(plan).includes(value))),
   )
+
+  // The plans sold in the chosen currency. The chosen plan always stays in the list.
+  const shownPlans = service ? plansShownFor(service.id, currency) : []
+  if (plan && !shownPlans.includes(plan)) shownPlans.push(plan)
+  const planHasNoPrice = plan && planPrice(plan, currency, billingCycle) === null
 
   // A subscription saved before the date limit existed keeps its own date as the limit.
   const earliest = earliestFirstDueDate()
@@ -82,8 +113,8 @@ export default function SubscriptionForm({ subscription, onSave, onCancel }) {
       setSubscriptionName(picked.name)
       setCategory(picked.category)
       if (!hasPayments) setBillingCycle(picked.billingCycle)
-      // The name is filled in, so the price is the next thing to enter.
-      focusNext.current = 'price'
+      // The name is filled in, so the plan (or, without plans, the price) comes next.
+      focusNext.current = plansFor(picked.id).length > 0 ? 'plan' : 'price'
     } else {
       // A new subscription takes the name that was searched for. One whose name was filled in by
       // an earlier pick starts blank instead, so it isn't saved under that service's name.
@@ -96,9 +127,47 @@ export default function SubscriptionForm({ subscription, onSave, onCancel }) {
       setServiceId(null)
       focusNext.current = 'subscriptionName'
     }
+    // A plan belongs to its service, and so does a price it filled in.
+    setPlanId(null)
+    if (priceFollowsPlan) {
+      setPrice('')
+      setPriceFollowsPlan(false)
+    }
     setHasPicked(true)
     setErrors({})
     setIsPicking(false)
+  }
+
+  function choosePlan(id) {
+    const next = findPlan(serviceId, id)
+    setPlanId(next?.id ?? null)
+    if (!next) {
+      // "Other plan": whatever price is there stays, as the person's own.
+      setPriceFollowsPlan(false)
+      return
+    }
+    const fill = fillFromPlan(next, { currency, cycle: billingCycle, cycleLocked: hasPayments })
+    setCurrency(fill.currency)
+    setBillingCycle(fill.cycle)
+    setPrice(fill.price ?? '')
+    setPriceFollowsPlan(true)
+    setErrors(({ price: _, ...rest }) => rest)
+  }
+
+  // A price the plan filled in follows it to the new currency or cycle. Where the plan isn't sold
+  // that way, the price is cleared rather than left showing an amount in the wrong currency.
+  function followPlan(nextCurrency, nextCycle) {
+    if (plan && priceFollowsPlan) setPrice(planPrice(plan, nextCurrency, nextCycle) ?? '')
+  }
+
+  function changeCurrency(code) {
+    setCurrency(code)
+    followPlan(code, billingCycle)
+  }
+
+  function changeCycle(cycle) {
+    setBillingCycle(cycle)
+    followPlan(currency, cycle)
   }
 
   function keepCurrentChoice() {
@@ -137,6 +206,7 @@ export default function SubscriptionForm({ subscription, onSave, onCancel }) {
     onSave({
       subscriptionName: subscriptionName.trim(),
       serviceId: service?.id ?? null,
+      planId: plan?.id ?? null,
       image: savedImage.trim(),
       price: Number(price),
       currency,
@@ -177,9 +247,11 @@ export default function SubscriptionForm({ subscription, onSave, onCancel }) {
         <div className="service-choice-text">
           <strong>{service ? service.name : 'Other subscription'}</strong>
           <span className="field-hint">
-            {service
-              ? 'Logo, category, and billing cycle filled in.'
-              : 'Adding your own picture is optional.'}
+            {!service
+              ? 'Adding your own picture is optional.'
+              : shownPlans.length > 0
+                ? 'Logo and category filled in. Pick your plan for its price.'
+                : 'Logo, category, and billing cycle filled in.'}
           </span>
         </div>
         <button
@@ -234,6 +306,32 @@ export default function SubscriptionForm({ subscription, onSave, onCancel }) {
         <FieldError id="error-name" message={errors.subscriptionName} />
       </label>
 
+      {shownPlans.length > 0 && (
+        <label>
+          Plan
+          <select
+            name="plan"
+            value={plan?.id ?? ''}
+            onChange={(e) => choosePlan(e.target.value)}
+            aria-describedby="hint-plan"
+          >
+            <option value="">Other plan, or I'll type the price</option>
+            {shownPlans.map((p) => (
+              <option key={p.id} value={p.id}>
+                {planLabel(p, currency, billingCycle)}
+              </option>
+            ))}
+          </select>
+          <span id="hint-plan" className="field-hint">
+            {planHasNoPrice
+              ? `${service.name} ${plan.name} has no official ${currency} ${billingCycle} price here. Enter what you pay.`
+              : plan && priceFollowsPlan
+                ? priceSource(currency)
+                : 'Prices are filled in for pesos and US dollars.'}
+          </span>
+        </label>
+      )}
+
       <div className="form-row">
         <label>
           Price
@@ -241,7 +339,10 @@ export default function SubscriptionForm({ subscription, onSave, onCancel }) {
             type="number"
             name="price"
             value={price}
-            onChange={(e) => setPrice(e.target.value)}
+            onChange={(e) => {
+              setPrice(e.target.value)
+              setPriceFollowsPlan(false)
+            }}
             min="0.01"
             max={MAX_PRICE}
             step="0.01"
@@ -253,7 +354,7 @@ export default function SubscriptionForm({ subscription, onSave, onCancel }) {
 
         <label>
           Currency
-          <select value={currency} onChange={(e) => setCurrency(e.target.value)}>
+          <select value={currency} onChange={(e) => changeCurrency(e.target.value)}>
             {CURRENCIES.map((code) => (
               <option key={code}>{code}</option>
             ))}
@@ -266,7 +367,7 @@ export default function SubscriptionForm({ subscription, onSave, onCancel }) {
           Billing cycle
           <select
             value={billingCycle}
-            onChange={(e) => setBillingCycle(e.target.value)}
+            onChange={(e) => changeCycle(e.target.value)}
             disabled={hasPayments}
             aria-describedby={service ? 'hint-cycle' : undefined}
           >

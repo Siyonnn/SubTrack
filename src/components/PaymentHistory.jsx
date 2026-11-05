@@ -28,12 +28,24 @@ export default function PaymentHistory({ uid, subscription, onUndo }) {
         </tr>
       </thead>
       <tbody>
+        {/* On phones each row is two lines with no column headings on screen, so the labels in
+            the cells show instead. Screen readers skip them: they read the column headings. */}
         {payments.map((payment) => (
           <tr key={payment.id}>
-            <td>{formatDate(payment.dueDate)}</td>
-            <td>{formatDate(payment.paidOn)}</td>
-            <td>{formatPrice(payment.amount, payment.currency)}</td>
-            <td>
+            <td className="history-due">
+              <span className="history-label" aria-hidden="true">
+                Period due{' '}
+              </span>
+              {formatDate(payment.dueDate)}
+            </td>
+            <td className="history-paid">
+              <span className="history-label" aria-hidden="true">
+                Paid on{' '}
+              </span>
+              {formatDate(payment.paidOn)}
+            </td>
+            <td className="history-amount">{formatPrice(payment.amount, payment.currency)}</td>
+            <td className="history-undo">
               {/* Only the latest payment can be undone, so the paid periods stay in order. */}
               {payment.dueDate === subscription.lastPaidDate && (
                 <button type="button" className="link" onClick={onUndo}>

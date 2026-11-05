@@ -26,6 +26,9 @@ service cloud.firestore {
         // An id from src/lib/services.js, or none for "Other" and subscriptions saved before.
         && (data.get('serviceId', null) == null
           || (data.serviceId is string && data.serviceId.size() <= 40))
+        // A plan from src/lib/plans.js, or none.
+        && (data.get('planId', null) == null
+          || (data.planId is string && data.planId.size() <= 40))
         // An uploaded picture is stored here, so it is capped like MAX_IMAGE_LENGTH.
         && data.get('image', '') is string
         && data.get('image', '').size() <= 100000;

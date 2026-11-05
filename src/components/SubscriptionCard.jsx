@@ -1,5 +1,6 @@
 import { useLayoutEffect, useRef, useState } from 'react'
 import { formatDate, formatPrice } from '../lib/format.js'
+import { findPlan } from '../lib/plans.js'
 import Modal from './Modal.jsx'
 import PaymentHistory from './PaymentHistory.jsx'
 import SubscriptionLogo from './SubscriptionLogo.jsx'
@@ -76,7 +77,12 @@ export default function SubscriptionCard({
         />
         <div className="card-title">
           <h3>{subscription.subscriptionName}</h3>
-          <p className="muted">{subscription.category}</p>
+          {/* "Music · Duo". A plan no longer listed just leaves the category. */}
+          <p className="muted">
+            {[subscription.category, findPlan(subscription.serviceId, subscription.planId)?.name]
+              .filter(Boolean)
+              .join(' · ')}
+          </p>
         </div>
       </div>
 
