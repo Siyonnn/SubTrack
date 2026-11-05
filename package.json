@@ -5,11 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build && node scripts/apk.js site",
     "preview": "vite preview",
     "test": "vitest run",
     "android:sync": "vite build && cap sync android",
-    "android:open": "cap open android"
+    "android:open": "cap open android",
+    "android:apk": "node scripts/apk.js save"
   },
   "dependencies": {
     "@capacitor/android": "^8.6.0",

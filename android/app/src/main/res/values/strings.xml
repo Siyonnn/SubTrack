@@ -1,6 +1,8 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">SubTrack</string>
+    <!-- The full name: shown when installing, in Settings > Apps, and on notifications. -->
+    <string name="app_name">SubTrack: Track Subscriptions</string>
+    <!-- The short name under the home screen icon, where a long name gets cut off. -->
     <string name="title_activity_main">SubTrack</string>
     <string name="package_name">com.subtrack.app</string>
     <string name="custom_url_scheme">com.subtrack.app</string>

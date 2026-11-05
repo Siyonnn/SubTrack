@@ -69,7 +69,17 @@ The `android/` folder is a native Android project that runs the same React code.
 
 To build from the terminal with `npx cap run android` instead, set `JAVA_HOME` to Android Studio's Java first (usually `C:\Program Files\Android\Android Studio\jbr`). Newer Java versions, such as Java 25, are too new for the Gradle version the project uses.
 
-To get an APK file you can send to someone, choose **Build → Generate App Bundles or APKs → Generate APKs** in Android Studio. The file is saved in `android/app/build/outputs/apk/debug/`. Publishing on Google Play needs a signed release build instead (**Build → Generate Signed App Bundle or APK**).
+### Sharing the app
+
+The website offers the app for download at `/SubTrack.apk`, so anyone can install it from a link such as `https://your-site.vercel.app/SubTrack.apk`. To update that download:
+
+1. Build a new APK: run `npm run android:sync`, then in Android Studio choose **Build → Generate App Bundles or APKs → Generate APKs**.
+2. Run `npm run android:apk`. It copies the new APK to `releases/SubTrack.apk`.
+3. Commit and push. Vercel redeploys and the link serves the new version.
+
+`npm run build` adds `releases/SubTrack.apk` to the website. The APK is not kept in `public/`, because everything there is also copied into the app, and each APK would then contain the previous one.
+
+This is a debug build, fine for sharing with friends and classmates. Publishing on Google Play needs a signed release build instead (**Build → Generate Signed App Bundle or APK**).
 
 ### Reminders in the app
 
