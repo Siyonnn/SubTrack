@@ -1,11 +1,15 @@
-// Registers this browser to receive payment reminders.
-// Each browser that turns reminders on gets a token from Firebase Cloud Messaging, saved at
+// Registers this browser or phone to receive payment reminders.
+// Each one that turns reminders on gets a token from Firebase Cloud Messaging, saved at
 // users/{uid}/devices/{token}. The daily job sends to every saved token.
 import { deleteDoc, doc, serverTimestamp, setDoc } from 'firebase/firestore'
-import { getMessaging, getToken, isSupported } from 'firebase/messaging'
 import { db } from '../firebase.js'
+import * as appPush from './appPush.js'
+import { isNativeApp } from './platform.js'
+import * as webPush from './webPush.js'
 
-const VAPID_KEY = import.meta.env.VITE_FIREBASE_VAPID_KEY
+// The website and the Android app get a token in different ways. Everything else is shared.
+const push = isNativeApp ? appPush : webPush
+
 const STORAGE_KEY = 'remindersToken'
 
 function deviceRef(uid, token) {
@@ -29,25 +33,23 @@ function writeToken(token) {
   }
 }
 
-// False when the key from the Firebase console isn't set, or the browser can't receive push.
-// iPhones can only receive push once the site is added to the Home Screen.
-export async function canUseReminders() {
-  return Boolean(VAPID_KEY) && (await isSupported())
+export function canUseReminders() {
+  return push.canReceive()
 }
 
-export function remindersAreOn() {
-  return Notification.permission === 'granted' && Boolean(readToken())
+export async function remindersAreOn() {
+  return Boolean(readToken()) && (await push.isAllowed())
 }
 
 async function registerDevice(uid) {
-  await navigator.serviceWorker.register('/reminders-sw.js')
-  const serviceWorkerRegistration = await navigator.serviceWorker.ready
-  const token = await getToken(getMessaging(), { vapidKey: VAPID_KEY, serviceWorkerRegistration })
+  const token = await push.getToken()
 
   const previous = readToken()
   if (previous && previous !== token) await deleteDoc(deviceRef(uid, previous))
   await setDoc(deviceRef(uid, token), {
     timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    // Tells the daily job how to word the message, since phones and browsers show them differently.
+    platform: push.platform,
     updatedAt: serverTimestamp(),
   })
   writeToken(token)
@@ -55,8 +57,7 @@ async function registerDevice(uid) {
 
 // Returns false if the person blocks notifications.
 export async function turnOnReminders(uid) {
-  const permission = await Notification.requestPermission()
-  if (permission !== 'granted') return false
+  if (!(await push.askToAllow())) return false
   await registerDevice(uid)
   return true
 }
@@ -71,7 +72,7 @@ export async function turnOffReminders(uid) {
 // time zones or blocked notifications since, so the saved record is brought up to date.
 export async function refreshReminders(uid) {
   if (!readToken()) return
-  if (Notification.permission !== 'granted') {
+  if (!(await push.isAllowed())) {
     await turnOffReminders(uid)
     return
   }

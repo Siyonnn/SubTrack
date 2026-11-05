@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { dateInTimeZone, remindersFor } from './reminders.js'
+import { ANDROID_CHANNEL_ID, dateInTimeZone, messageFor, remindersFor } from './reminders.js'
 
 const TODAY = '2026-10-20'
 
@@ -55,5 +55,27 @@ describe('remindersFor', () => {
   it('tags each reminder by subscription and day', () => {
     const [reminder] = remindersFor([subscription({ firstDueDate: TODAY })], TODAY)
     expect(reminder.tag).toBe('sub1:2026-10-20')
+  })
+})
+
+describe('messageFor', () => {
+  const reminder = { title: 'Netflix', body: '₱549.00 due today', tag: 'sub1:2026-10-20' }
+
+  it('sends browsers data only, for the service worker to show', () => {
+    const message = messageFor(reminder, 'web-token', 'web')
+    expect(message).toEqual({ token: 'web-token', data: { ...reminder, url: '/' } })
+    expect(message).not.toHaveProperty('notification')
+  })
+
+  it('treats a device saved before the app existed as a browser', () => {
+    expect(messageFor(reminder, 'old-token', undefined)).toEqual(messageFor(reminder, 'old-token', 'web'))
+  })
+
+  it('gives Android a notification Android can show by itself, in the reminders channel', () => {
+    expect(messageFor(reminder, 'phone-token', 'android')).toEqual({
+      token: 'phone-token',
+      notification: { title: 'Netflix', body: '₱549.00 due today' },
+      android: { notification: { tag: 'sub1:2026-10-20', channelId: ANDROID_CHANNEL_ID } },
+    })
   })
 })

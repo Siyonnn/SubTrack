@@ -1,15 +1,16 @@
-# Subscription Tracker
+# SubTrack
 
-A web app for tracking recurring subscriptions such as Netflix, Spotify, and Claude. It shows when each one is next due, which are overdue, and what they cost you per month and per year.
+A web app and Android app for tracking recurring subscriptions such as Netflix, Spotify, and Claude. It shows when each one is next due, which are overdue, and what they cost you per month and per year.
 
 **Live site:** https://subscription-tracker-6f6ec.web.app
 
-Built with React, Vite, Firebase Authentication, and Cloud Firestore.
+Built with React, Vite, Firebase Authentication, and Cloud Firestore. The Android app is the same code, packaged with Capacitor.
 
 ## Features
 
 - Sign up, log in, and log out with email and password
 - Add, edit, and delete subscriptions
+- Pick well-known services such as Netflix and Spotify to fill in their name, category, and logo, or add any other subscription with your own picture
 - Mark a billing period as paid, with a payment history and undo
 - A status for each subscription: paid, due soon, overdue, or upcoming
 - Estimated monthly and yearly totals, grouped by currency
@@ -46,9 +47,48 @@ npx firebase-tools deploy
 
 The login step is only needed once per computer. The deploy publishes both the site and the Firestore rules.
 
+## Android app
+
+The `android/` folder is a native Android project that runs the same React code. You need [Android Studio](https://developer.android.com/studio), which includes the Android SDK and the Java version the build needs.
+
+1. Build the web code and copy it into the Android project:
+
+   ```
+   npm run android:sync
+   ```
+
+   Run this again after every change to the code in `src/`, or the app keeps showing the old version.
+
+2. Open the project in Android Studio:
+
+   ```
+   npm run android:open
+   ```
+
+3. Choose an emulator, or a phone with USB debugging on, and press **Run** (the green ▶).
+
+To build from the terminal with `npx cap run android` instead, set `JAVA_HOME` to Android Studio's Java first (usually `C:\Program Files\Android\Android Studio\jbr`). Newer Java versions, such as Java 25, are too new for the Gradle version the project uses.
+
+To get an APK file you can send to someone, choose **Build → Generate App Bundles or APKs → Generate APKs** in Android Studio. The file is saved in `android/app/build/outputs/apk/debug/`. Publishing on Google Play needs a signed release build instead (**Build → Generate Signed App Bundle or APK**).
+
+### Reminders in the app
+
+The app gets reminders as native push notifications, sent by the same daily job as the website. Until the app is connected to Firebase, the **Turn on reminders** button doesn't appear in it.
+
+1. In the Firebase console, open **Project settings → General → Your apps → Add app → Android**. Enter `com.subtrack.app` as the package name and register the app.
+2. Download `google-services.json` and put it in `android/app/`. It is listed in `.gitignore`, like `.env`.
+3. Run `npm run android:sync` and run the app again.
+4. Publish the updated Firestore rules, which check the platform each device saves:
+
+   ```
+   npx firebase-tools deploy --only firestore:rules
+   ```
+
+5. Push to GitHub. The daily job runs `scripts/send-reminders.js` from the repository, and only the updated script words messages so Android shows them while the app is closed.
+
 ## Payment reminders
 
-A GitHub Actions workflow runs `scripts/send-reminders.js` every day at 9:00 AM Philippine time and sends reminders through Firebase Cloud Messaging. People turn reminders on for each browser with the **Turn on reminders** button on the dashboard.
+A GitHub Actions workflow runs `scripts/send-reminders.js` every day at 9:00 AM Philippine time and sends reminders through Firebase Cloud Messaging. People turn reminders on for each browser or phone with the **Turn on reminders** button on the dashboard.
 
 To set it up:
 

@@ -5,6 +5,9 @@ import { formatDate, formatPrice } from './format.js'
 
 export const REMIND_DAYS_BEFORE = 3
 
+// The Android notification channel reminders arrive in. The app creates it (see appPush.js).
+export const ANDROID_CHANNEL_ID = 'payment-reminders'
+
 // Today's date as "YYYY-MM-DD" in the given time zone, such as "Asia/Manila".
 // This is the app's internal date format, used to compare against due dates, so it must
 // stay YYYY-MM-DD. How dates look to people is set by formatDate in format.js.
@@ -46,4 +49,19 @@ export function remindersFor(subscriptions, today) {
     }
   }
   return reminders
+}
+
+// The Firebase Cloud Messaging message for one reminder, shaped for where the device runs.
+// Browsers get data only, and public/reminders-sw.js turns it into a notification. Android shows a
+// message without the app's help only when it has a notification part, which also lets the
+// reminder appear while the app is closed. Records saved before the app existed have no platform.
+export function messageFor(reminder, token, platform = 'web') {
+  if (platform === 'android') {
+    return {
+      token,
+      notification: { title: reminder.title, body: reminder.body },
+      android: { notification: { tag: reminder.tag, channelId: ANDROID_CHANNEL_ID } },
+    }
+  }
+  return { token, data: { ...reminder, url: '/' } }
 }

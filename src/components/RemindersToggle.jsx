@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { isNativeApp } from '../lib/platform.js'
 import {
   canUseReminders,
   refreshReminders,
@@ -7,7 +8,12 @@ import {
   turnOnReminders,
 } from '../lib/pushReminders.js'
 
-// Hidden in browsers that can't receive push, so it never offers something that won't work.
+const DEVICE = isNativeApp ? 'this phone' : 'this browser'
+const BLOCKED_MESSAGE = isNativeApp
+  ? 'Notifications are off for SubTrack. Turn them on in Settings > Apps > SubTrack > Notifications, then try again.'
+  : "Notifications are blocked for this site. Allow them in your browser's site settings, then try again."
+
+// Hidden where push can't be received, so it never offers something that won't work.
 export default function RemindersToggle({ uid, onMessage }) {
   const [isSupported, setIsSupported] = useState(false)
   const [isOn, setIsOn] = useState(false)
@@ -15,14 +21,18 @@ export default function RemindersToggle({ uid, onMessage }) {
 
   useEffect(() => {
     let isCurrent = true
-    canUseReminders().then((supported) => {
-      if (!isCurrent || !supported) return
+    async function showWhetherOn() {
+      const on = await remindersAreOn()
+      if (isCurrent) setIsOn(on)
+    }
+    async function check() {
+      if (!(await canUseReminders()) || !isCurrent) return
       setIsSupported(true)
-      setIsOn(remindersAreOn())
-      refreshReminders(uid)
-        .then(() => isCurrent && setIsOn(remindersAreOn()))
-        .catch(() => {})
-    })
+      await showWhetherOn()
+      await refreshReminders(uid)
+      await showWhetherOn()
+    }
+    check().catch(() => {})
     return () => {
       isCurrent = false
     }
@@ -36,22 +46,20 @@ export default function RemindersToggle({ uid, onMessage }) {
       if (isOn) {
         await turnOffReminders(uid)
         setIsOn(false)
-        onMessage('Reminders are off for this browser.')
+        onMessage(`Reminders are off for ${DEVICE}.`)
       } else if (await turnOnReminders(uid)) {
         setIsOn(true)
         onMessage(
-          'Reminders are on for this browser. You will get one 3 days before each payment and on the day it is due.',
+          `Reminders are on for ${DEVICE}. You will get one 3 days before each payment and on the day it is due.`,
         )
       } else {
-        onMessage(
-          "Notifications are blocked for this site. Allow them in your browser's site settings, then try again.",
-        )
+        onMessage(BLOCKED_MESSAGE)
       }
     } catch (error) {
-      // Logged so the real cause shows in the browser console (F12 > Console).
+      // Logged so the real cause shows in the console (F12 > Console, or chrome://inspect for the app).
       console.error('Could not change reminders:', error)
       // Says which part failed without opening the console. Firebase errors have a text code
-      // such as "permission-denied"; browser errors only have a number, so show their message.
+      // such as "permission-denied"; other errors only have a number, so show their message.
       const detail =
         typeof error.code === 'string' ? error.code : `${error.name}: ${error.message}`
       onMessage(`Could not change reminders (${detail}). Check your connection and try again.`)

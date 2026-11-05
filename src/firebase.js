@@ -1,6 +1,7 @@
 import { initializeApp } from 'firebase/app'
-import { getAuth } from 'firebase/auth'
+import { getAuth, indexedDBLocalPersistence, initializeAuth } from 'firebase/auth'
 import { getFirestore } from 'firebase/firestore'
+import { isNativeApp } from './lib/platform.js'
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -15,5 +16,12 @@ const firebaseConfig = {
 export const isFirebaseConfigured = Boolean(firebaseConfig.apiKey && firebaseConfig.projectId)
 
 const app = isFirebaseConfigured ? initializeApp(firebaseConfig) : null
-export const auth = app ? getAuth(app) : null
+// getAuth also loads the helper for sign-in popups, which the app never uses and which can stall
+// start-up inside a native WebView. The app sets up only what email and password log in needs.
+function createAuth() {
+  if (!app) return null
+  return isNativeApp ? initializeAuth(app, { persistence: indexedDBLocalPersistence }) : getAuth(app)
+}
+
+export const auth = createAuth()
 export const db = app ? getFirestore(app) : null

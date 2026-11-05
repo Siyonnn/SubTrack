@@ -1,12 +1,13 @@
 # Subscription Tracker: Specification
 
-A web app for tracking recurring subscriptions (Netflix, Spotify, Claude, etc.), their billing dates, and estimated spending. Built with React, Vite, Firebase Authentication, and Cloud Firestore.
+A web app and Android app for tracking recurring subscriptions (Netflix, Spotify, Claude, etc.), their billing dates, and estimated spending. Built with React, Vite, Firebase Authentication, and Cloud Firestore.
 
 ## Subscription fields
 
 | Field | Type | Notes |
 |---|---|---|
-| `image` | URL (optional) | Shows a default icon when blank |
+| `serviceId` | string \| null | A well-known service picked when adding, from `src/lib/services.js`. Null for "Other" |
+| `image` | string (optional) | A picture the user uploaded, stored as a small `data:image/...` link (128×128, at most 100,000 characters). Older subscriptions may have a web link instead. Blank for a picked service |
 | `subscriptionName` | string | Required |
 | `price` | number | Required, greater than 0, at most 1,000,000. Also enforced by the Firestore rules |
 | `currency` | string | ISO code, e.g. `PHP`, `USD` |
@@ -16,6 +17,15 @@ A web app for tracking recurring subscriptions (Netflix, Spotify, Claude, etc.),
 | `lastPaidDate` | date \| null | Due date of the most recent paid period; null until first payment |
 
 Computed, not stored: `nextPaymentDate`, status, overdue count, expense totals.
+
+## Well-known services and logos
+
+- Adding a subscription starts with a searchable grid of well-known services, plus **Other**.
+- Picking a service fills in its name, category, and usual billing cycle, and shows its logo. The name and everything else can still be changed, and renaming keeps the logo.
+- Price and the first payment date are always entered by the user: they depend on the plan and the day the person signed up.
+- Only services with an official logo in Simple Icons are listed, so a picked service never shows a stand-in. Popular services without one (such as Disney+, Prime Video, ChatGPT, Canva, Viu) are added with **Other** and an uploaded picture.
+- **Other** can have an uploaded picture. It is cropped to the middle square and shrunk to 128×128 before saving, so it is a few kilobytes and needs no separate file storage.
+- What a card shows, in order: the picked service's logo; the uploaded picture; the logo of a service whose name matches exactly (for subscriptions saved before services could be picked); the first letter of the name.
 
 ## Dates
 
@@ -63,12 +73,21 @@ Evaluated in this order:
 - Push notifications through Firebase Cloud Messaging, turned on per browser from the dashboard.
 - Sent 3 days before a payment, on the day it's due, and every day while it's overdue. One notification per subscription.
 - A daily GitHub Actions job sends them at 9:00 AM Philippine time. "Today" is worked out in each browser's own time zone, using the same date rules as the dashboard.
-- Each browser is saved at `users/{uid}/devices/{token}` with its time zone. Logging out removes this browser's record, so the next person to use it doesn't get the previous account's reminders.
+- Each browser or phone is saved at `users/{uid}/devices/{token}` with its time zone and platform (`web` or `android`). Logging out removes the record, so the next person to use the device doesn't get the previous account's reminders.
+- Browsers get data-only messages that `public/reminders-sw.js` shows. The Android app gets messages with a notification part, so Android shows them itself, even while the app is closed. Records with no platform were saved before the app existed and count as `web`.
 - iPhones need the site added to the Home Screen first.
+
+## Android app
+
+- The same React code, packaged with Capacitor as a native Android app (`android/`). `src/lib/platform.js` tells the two apart.
+- Opens straight to log in instead of the landing page.
+- Android's back button closes an open popup, or else sends the app to the background.
+- Reminders use native push. The button only appears when the app was built with `android/app/google-services.json`.
+- Follows the phone's light or dark mode, including the status and navigation bars.
 
 ## Out of scope for v1
 
-Email reminders, image uploads, currency conversion, CSV export, charts.
+Email reminders, currency conversion, CSV export, charts.
 
 ## Build order
 

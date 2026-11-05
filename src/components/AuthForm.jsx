@@ -5,6 +5,7 @@ import {
   signInWithEmailAndPassword,
 } from 'firebase/auth'
 import { auth } from '../firebase.js'
+import { Logo } from './Brand.jsx'
 import {
   LOCK_SECONDS,
   NO_FAILURES,
@@ -55,8 +56,8 @@ function Preview() {
   )
 }
 
-export default function AuthForm() {
-  const [isRegistering, setIsRegistering] = useState(false)
+export default function AuthForm({ startRegistering = false, onBack }) {
+  const [isRegistering, setIsRegistering] = useState(startRegistering)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -137,7 +138,14 @@ export default function AuthForm() {
   return (
     <main className="auth">
       <section className="auth-panel">
-        <p className="auth-brand">Subscription Tracker</p>
+        {onBack && (
+          <button type="button" className="link auth-back" onClick={onBack}>
+            ← Back to home
+          </button>
+        )}
+        <p className="auth-brand">
+          <Logo size={48} />
+        </p>
         <h1>{isRegistering ? 'Create your account' : 'Log in'}</h1>
         <p className="muted">Keep track of what you pay for and when it's due.</p>
 

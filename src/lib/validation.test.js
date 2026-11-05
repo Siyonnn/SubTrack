@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { MAX_PRICE, earliestFirstDueDate, validateSubscription } from './validation.js'
+import { MAX_IMAGE_LENGTH, MAX_PRICE, earliestFirstDueDate, validateSubscription } from './validation.js'
 
 const MIN_DATE = '2026-07-09'
 const valid = {
@@ -30,9 +30,18 @@ describe('validateSubscription', () => {
     expect(errorsFor({ subscriptionName: '   ' })).toHaveProperty('subscriptionName')
   })
 
-  it('rejects an image that is not a web link', () => {
+  it('rejects an image that is not a web link or an uploaded picture', () => {
     expect(errorsFor({ image: 'logo.png' })).toHaveProperty('image')
     expect(errorsFor({ image: 'javascript:alert(1)' })).toHaveProperty('image')
+    expect(errorsFor({ image: 'data:text/html;base64,PHNjcmlwdD4=' })).toHaveProperty('image')
+    expect(errorsFor({ image: 'data:image/svg+xml;base64,PHN2Zz4=' })).toHaveProperty('image')
+  })
+
+  it('accepts an uploaded picture up to the size limit', () => {
+    expect(errorsFor({ image: 'data:image/webp;base64,UklGRg==' })).toEqual({})
+    expect(errorsFor({ image: 'data:image/png;base64,iVBORw0KGgo=' })).toEqual({})
+    const tooBig = 'data:image/png;base64,' + 'A'.repeat(MAX_IMAGE_LENGTH)
+    expect(errorsFor({ image: tooBig })).toHaveProperty('image')
   })
 
   it('rejects an empty, zero, or negative price', () => {

@@ -1,0 +1,10 @@
+{
+  "appId": "com.subtrack.app",
+  "appName": "SubTrack",
+  "webDir": "dist",
+  "plugins": {
+    "PushNotifications": {
+      "presentationOptions": ["alert", "sound"]
+    }
+  }
+}

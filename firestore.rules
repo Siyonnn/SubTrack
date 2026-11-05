@@ -22,7 +22,13 @@ service cloud.firestore {
         && data.currency in ['PHP', 'USD', 'EUR', 'GBP', 'JPY', 'AUD', 'CAD', 'SGD']
         && data.billingCycle in ['weekly', 'monthly', 'yearly']
         && isDate(data.firstDueDate)
-        && (data.lastPaidDate == null || isDate(data.lastPaidDate));
+        && (data.lastPaidDate == null || isDate(data.lastPaidDate))
+        // An id from src/lib/services.js, or none for "Other" and subscriptions saved before.
+        && (data.get('serviceId', null) == null
+          || (data.serviceId is string && data.serviceId.size() <= 40))
+        // An uploaded picture is stored here, so it is capped like MAX_IMAGE_LENGTH.
+        && data.get('image', '') is string
+        && data.get('image', '').size() <= 100000;
     }
 
     // Each user can read and write only their own subscriptions.
@@ -35,13 +41,15 @@ service cloud.firestore {
       }
     }
 
-    // One record per browser that has reminders turned on. The daily job reads these with
-    // admin access, which these rules don't apply to.
+    // One record per browser or phone that has reminders turned on. The daily job reads these
+    // with admin access, which these rules don't apply to. Records saved before the Android app
+    // existed have no platform, and the job treats them as browsers.
     match /users/{userId}/devices/{token} {
       allow read, delete: if isOwner(userId);
       allow create, update: if isOwner(userId)
         && request.resource.data.timeZone is string
-        && request.resource.data.timeZone.size() <= 64;
+        && request.resource.data.timeZone.size() <= 64
+        && request.resource.data.get('platform', 'web') in ['web', 'android'];
     }
   }
 }

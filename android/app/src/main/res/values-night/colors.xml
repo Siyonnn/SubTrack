@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The dark-mode paper color in src/index.css. -->
+    <color name="app_paper">#0E0F1F</color>
+</resources>

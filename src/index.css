@@ -1,18 +1,31 @@
+/* SubTrack theme: every subscription is a ticket stub, and every payment state is an ink stamp. */
 :root {
-  --paper: #f3f5f1;
+  --paper: #eef0f7;
   --surface: #ffffff;
-  --ink: #17231f;
-  --muted: #5f6b66;
-  --line: #d5dbd5;
-  --accent: #1f5c4a;
+  --ink: #15172b;
+  --muted: #5c6080;
+  --line: #d3d6e6;
+  --accent: #3a3cc9;
   --on-accent: #ffffff;
-  --highlight: #f6dc4e;
-  --on-highlight: #1d1b0a;
-  --danger: #b3311b;
+  --highlight: #ffb31a;
+  --on-highlight: #2a1a00;
+  --danger: #d23b25;
   --on-danger: #ffffff;
-  --backdrop: rgb(23 35 31 / 0.45);
+  --paid: #16865f;
+  --backdrop: rgb(21 23 43 / 0.45);
 
-  font-family: 'Bricolage Grotesque', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  /* Chloe the dachshund */
+  --coat: #1f1c24;
+  --coat-edge: #1f1c24;
+  --ear: #2e2a35;
+  --tan: #b9783e;
+  --eye-white: #f5efe6;
+
+  --font-display: 'Archivo', 'Arial Black', system-ui, sans-serif;
+  --font-body: 'Instrument Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'Martian Mono', ui-monospace, 'Cascadia Mono', Consolas, monospace;
+
+  font-family: var(--font-body);
   font-size: 16px;
   line-height: 1.45;
   font-variant-numeric: tabular-nums;
@@ -22,16 +35,22 @@
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
-    --paper: #111715;
-    --surface: #19211e;
-    --ink: #e8ede9;
-    --muted: #97a39d;
-    --line: #2c3733;
-    --accent: #7fd1b3;
-    --on-accent: #0e1513;
-    --danger: #f0806b;
+    --paper: #0e0f1f;
+    --surface: #1a1c33;
+    --ink: #eceef9;
+    --muted: #a0a4c4;
+    --line: #2e3152;
+    --accent: #a3a6ff;
+    --on-accent: #11122a;
+    --highlight: #ffc24d;
+    --danger: #ff8a73;
     --on-danger: #1c0b07;
+    --paid: #5fd6a8;
     --backdrop: rgb(0 0 0 / 0.6);
+    --coat: #26232d;
+    --coat-edge: #625b72;
+    --ear: #322e3a;
+    --tan: #c98a4e;
   }
 }
 
@@ -96,9 +115,9 @@ button {
   font: inherit;
   font-weight: 500;
   min-height: 40px;
-  padding: 8px 16px;
+  padding: 8px 18px;
   border: 1px solid transparent;
-  border-radius: 8px;
+  border-radius: 999px;
   background: var(--accent);
   color: var(--on-accent);
   cursor: pointer;
@@ -219,6 +238,81 @@ input[aria-invalid='true'] {
   white-space: nowrap;
 }
 
+/* Logo */
+
+.logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo-mark {
+  flex-shrink: 0;
+  color: var(--accent);
+}
+
+.logo-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.wordmark {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 900;
+  font-stretch: 125%;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: var(--ink);
+}
+
+.wordmark b {
+  font-weight: 900;
+  color: var(--accent);
+}
+
+.tagline {
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+}
+
+/* Chloe's notes: only shown when something needs attention, or when everything is paid. */
+
+.chloe-note {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 20px;
+  padding: 8px 16px 8px 8px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+}
+
+.chloe-note p {
+  min-width: 0;
+}
+
+.chloe-note svg,
+.empty-state svg {
+  flex-shrink: 0;
+}
+
+.empty-state {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.empty-state p {
+  max-width: 34ch;
+}
+
 /* Totals and the add button */
 
 .overview {
@@ -247,10 +341,12 @@ input[aria-invalid='true'] {
   line-height: 1.1;
 }
 
+/* Money and dates are set like a printed receipt. */
 .total-amount {
-  font-size: clamp(2.25rem, 5vw, 3.5rem);
+  font-family: var(--font-mono);
+  font-size: clamp(1.75rem, 4.5vw, 2.75rem);
   font-weight: 600;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.04em;
 }
 
 .totals-note {
@@ -285,14 +381,25 @@ input[aria-invalid='true'] {
   gap: 16px;
 }
 
+/* Each card is a ticket stub: notches on both sides line up with the dashed tear line
+   above the footer. The footer is one row at every card width (see .card-grid), so the
+   tear line always sits the same distance from the bottom. */
 .card {
+  /* Card bottom padding (16) + footer height (46, padding included) - half the dashed line. */
+  --tear: 61px;
   display: flex;
   flex-direction: column;
   gap: 12px;
-  padding: 16px;
+  padding: 18px 18px 16px;
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: 14px;
+  -webkit-mask:
+    radial-gradient(circle 10px at 0 calc(100% - var(--tear)), #0000 98%, #000) left / 51% 100% no-repeat,
+    radial-gradient(circle 10px at 100% calc(100% - var(--tear)), #0000 98%, #000) right / 51% 100% no-repeat;
+  mask:
+    radial-gradient(circle 10px at 0 calc(100% - var(--tear)), #0000 98%, #000) left / 51% 100% no-repeat,
+    radial-gradient(circle 10px at 100% calc(100% - var(--tear)), #0000 98%, #000) right / 51% 100% no-repeat;
 }
 
 .card-heading {
@@ -317,53 +424,203 @@ input[aria-invalid='true'] {
   flex-shrink: 0;
 }
 
-.card-image-fallback {
+/* Logos: a service's brand mark, a picture someone uploaded, or the first letter of the name. */
+
+.service-logo {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--paper);
-  border: 1px solid var(--line);
-  color: var(--ink);
-  font-weight: 600;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  /* Keeps a black logo tile visible against the dark theme's surfaces. */
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.12);
+}
+
+.service-logo svg {
+  width: 58%;
+  height: 58%;
+}
+
+.logo-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: var(--accent);
+  color: var(--on-accent);
+  font-family: var(--font-display);
+  font-weight: 800;
   font-size: 1.125rem;
 }
 
+/* Uploaded pictures keep their whole shape, so they can have see-through edges. */
+img.card-image,
+img.choice-logo {
+  background: var(--paper);
+}
+
+.choice-logo {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+/* Choosing a service when adding a subscription */
+
+.picker-intro {
+  margin: 0;
+}
+
+.service-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.service-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
+  gap: 8px;
+}
+
+.service-tile {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 6px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 0.8125rem;
+  line-height: 1.2;
+  text-align: center;
+}
+
+.service-tile:hover {
+  border-color: var(--accent);
+}
+
+.service-choice {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--paper);
+}
+
+.service-choice-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.service-choice .field-hint {
+  color: var(--muted);
+}
+
+.image-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+}
+
+.image-actions .field-error {
+  flex-basis: 100%;
+  font-size: 0.875rem;
+}
+
 .card-price {
-  font-size: 1.375rem;
+  font-family: var(--font-mono);
+  font-size: 1.3rem;
   font-weight: 600;
   line-height: 1.2;
+  letter-spacing: -0.02em;
 }
 
 .card-price .muted {
-  font-size: 0.875rem;
+  font-size: 0.75rem;
   font-weight: 400;
+  letter-spacing: 0;
 }
 
 .due {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 10px;
   font-size: 0.9375rem;
 }
 
 .due .muted {
-  font-size: 0.875rem;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  text-transform: uppercase;
 }
 
-/* Status is marked the way you would mark a paper statement. */
+/* Statuses are rubber stamps. */
+.due-soon,
+.due-overdue,
+.due-paid {
+  display: inline-block;
+  padding: 5px 7px;
+  border: 2px solid currentColor;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  line-height: 1;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  transform: rotate(-3deg);
+}
+
 .due-soon {
-  padding: 1px 5px;
-  border-radius: 3px;
   background: var(--highlight);
+  border-color: var(--highlight);
   color: var(--on-highlight);
-  font-weight: 500;
 }
 
 .due-overdue {
   color: var(--danger);
-  font-weight: 600;
 }
 
 .due-paid {
-  color: var(--accent);
-  font-weight: 600;
+  color: var(--paid);
+}
+
+/* Lands like a stamp when a payment is marked, not on every page load. */
+@media (prefers-reduced-motion: no-preference) {
+  .due-paid.just-stamped {
+    animation: stamp 500ms cubic-bezier(0.2, 1.6, 0.4, 1) both;
+  }
+}
+
+@keyframes stamp {
+  from {
+    transform: rotate(-12deg) scale(1.8);
+    opacity: 0.2;
+  }
+  to {
+    transform: rotate(-3deg) scale(1);
+    opacity: 1;
+  }
 }
 
 /* One row, so a card without the button is the same height as its neighbours. */
@@ -374,9 +631,9 @@ input[aria-invalid='true'] {
   flex-wrap: wrap;
   gap: 8px 12px;
   min-height: 46px;
-  margin-top: auto;
-  padding-top: 12px;
-  border-top: 1px solid var(--line);
+  margin: auto -18px 0;
+  padding: 12px 18px 0;
+  border-top: 2px dashed var(--line);
 }
 
 .card-links {
@@ -399,6 +656,11 @@ input[aria-invalid='true'] {
 
   .card-footer .small {
     min-height: 44px;
+  }
+
+  /* The footer grows to 58px with the bigger buttons. */
+  .card {
+    --tear: 73px;
   }
 }
 
@@ -498,12 +760,14 @@ input[aria-invalid='true'] {
 
 .auth-brand {
   margin-bottom: 40px;
-  font-weight: 600;
 }
 
 .auth h1 {
   margin-bottom: 8px;
-  font-size: 2.5rem;
+  font-family: var(--font-display);
+  font-size: 2.25rem;
+  font-weight: 800;
+  font-stretch: 112%;
   line-height: 1.05;
   letter-spacing: -0.02em;
 }
@@ -555,7 +819,13 @@ input[aria-invalid='true'] {
 }
 
 .preview-list li span:last-child {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
   text-align: right;
+}
+
+.preview-list li > :nth-child(2) {
+  justify-self: start;
 }
 
 /* Messages that belong to the whole page */

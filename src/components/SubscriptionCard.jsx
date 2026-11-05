@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useLayoutEffect, useRef, useState } from 'react'
 import { formatDate, formatPrice } from '../lib/format.js'
 import Modal from './Modal.jsx'
 import PaymentHistory from './PaymentHistory.jsx'
+import SubscriptionLogo from './SubscriptionLogo.jsx'
 
 const CYCLE_LABELS = {
   weekly: 'week',
@@ -9,14 +10,15 @@ const CYCLE_LABELS = {
   yearly: 'year',
 }
 
-function DueLine({ payment }) {
+function DueLine({ payment, justStamped }) {
   const { status, nextPaymentDate, daysUntilDue: days, overduePeriods } = payment
   const date = formatDate(nextPaymentDate)
 
   if (status === 'paid') {
     return (
       <p className="due">
-        <span className="due-paid">Paid</span> <span className="muted">Next {date}</span>
+        <span className={justStamped ? 'due-paid just-stamped' : 'due-paid'}>Paid</span>{' '}
+        <span className="muted">Next {date}</span>
       </p>
     )
   }
@@ -50,26 +52,28 @@ export default function SubscriptionCard({
   onEdit,
   onDelete,
 }) {
-  const [imageFailed, setImageFailed] = useState(false)
   const [showHistory, setShowHistory] = useState(false)
   const name = subscription.subscriptionName
-  const showImage = subscription.image && !imageFailed
+
+  // Only a card that turns paid while on screen gets the stamp animation, not every paid card
+  // on page load. A layout effect, so the stamp is never painted once without it.
+  const wasPaid = useRef(payment.status === 'paid')
+  const [justStamped, setJustStamped] = useState(false)
+  useLayoutEffect(() => {
+    const isPaid = payment.status === 'paid'
+    if (isPaid && !wasPaid.current) setJustStamped(true)
+    wasPaid.current = isPaid
+  }, [payment.status])
 
   return (
     <article className="card">
       <div className="card-heading">
-        {showImage ? (
-          <img
-            className="card-image"
-            src={subscription.image}
-            alt=""
-            onError={() => setImageFailed(true)}
-          />
-        ) : (
-          <div className="card-image card-image-fallback" aria-hidden="true">
-            {subscription.subscriptionName.charAt(0).toUpperCase()}
-          </div>
-        )}
+        <SubscriptionLogo
+          className="card-image"
+          name={subscription.subscriptionName}
+          serviceId={subscription.serviceId}
+          image={subscription.image}
+        />
         <div className="card-title">
           <h3>{subscription.subscriptionName}</h3>
           <p className="muted">{subscription.category}</p>
@@ -80,7 +84,7 @@ export default function SubscriptionCard({
         {formatPrice(subscription.price, subscription.currency)}{' '}
         <span className="muted">/ {CYCLE_LABELS[subscription.billingCycle]}</span>
       </p>
-      <DueLine payment={payment} />
+      <DueLine payment={payment} justStamped={justStamped} />
 
       {/* The labels name the subscription so each button is distinct in a screen reader's list. */}
       <div className="card-footer">

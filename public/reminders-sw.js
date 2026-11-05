@@ -4,7 +4,7 @@
 
 self.addEventListener('push', (event) => {
   const payload = event.data ? event.data.json() : {}
-  const { title = 'Subscription Tracker', body = '', tag, url = '/' } = {
+  const { title = 'SubTrack', body = '', tag, url = '/' } = {
     ...payload.notification,
     ...payload.data,
   }

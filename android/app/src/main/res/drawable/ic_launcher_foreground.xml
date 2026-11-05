@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The SubTrack mark from src/components/Brand.jsx, on the 64-unit grid used there: a ticket with
+     a repeat arrow and a tear line cut out. The cut-outs show the blue icon background through. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group
+        android:scaleX="0.75"
+        android:scaleY="0.75"
+        android:translateX="30"
+        android:translateY="30">
+        <path
+            android:fillColor="#FFB31A"
+            android:fillType="evenOdd"
+            android:pathData="M12,14 H52 a6,6 0 0 1 6,6 V26 a6,6 0 0 0 0,12 V44 a6,6 0 0 1 -6,6 H12 a6,6 0 0 1 -6,-6 V38 a6,6 0 0 0 0,-12 V20 a6,6 0 0 1 6,-6 Z M32.2,32 A9.2,9.2 0 1 1 22,22.855 L22,26.287 A5.8,5.8 0 1 0 28.8,32 Z M28.6,24.5 L22,19.8 L22,29.2 Z M39.8,18 h2.4 v3.2 h-2.4 Z M39.8,24.2 h2.4 v3.2 h-2.4 Z M39.8,30.4 h2.4 v3.2 h-2.4 Z M39.8,36.6 h2.4 v3.2 h-2.4 Z M39.8,42.8 h2.4 v3.2 h-2.4 Z" />
+    </group>
+</vector>

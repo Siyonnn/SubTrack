@@ -14,6 +14,8 @@ import {
 } from '../lib/subscriptions.js'
 import { turnOffReminders } from '../lib/pushReminders.js'
 import { formatDate } from '../lib/format.js'
+import { isNativeApp } from '../lib/platform.js'
+import { Chloe, Logo } from './Brand.jsx'
 import ConfirmDialog from './ConfirmDialog.jsx'
 import ExpenseSummary from './ExpenseSummary.jsx'
 import Filters from './Filters.jsx'
@@ -29,6 +31,52 @@ function watchOnline(onChange) {
     window.removeEventListener('online', onChange)
     window.removeEventListener('offline', onChange)
   }
+}
+
+function dueLabel({ status, daysUntilDue: days, nextPaymentDate }) {
+  if (status === 'overdue') return `is overdue since ${formatDate(nextPaymentDate)}`
+  if (days === 0) return 'is due today'
+  if (days === 1) return 'is due tomorrow'
+  return `is due in ${days} days`
+}
+
+// Chloe speaks up only when a payment needs attention, or naps when everything is paid.
+// Uses every subscription, not just the filtered ones.
+function ChloeNote({ rows }) {
+  const needsAttention = rows
+    .filter(({ payment }) => payment.status === 'overdue' || payment.status === 'dueSoon')
+    .sort((a, b) => a.payment.nextPaymentDate.localeCompare(b.payment.nextPaymentDate))
+
+  if (needsAttention.length > 0) {
+    const [{ subscription, payment }] = needsAttention
+    const more = needsAttention.length - 1
+    return (
+      <div className="chloe-note">
+        <Chloe mood="alert" size={52} />
+        <p>
+          <strong>Chloe caught a scent.</strong> {subscription.subscriptionName} {dueLabel(payment)}.
+          {more > 0 && ` ${more} more ${more === 1 ? 'needs' : 'need'} attention.`}
+        </p>
+      </div>
+    )
+  }
+
+  if (rows.length > 0 && rows.every(({ payment }) => payment.status === 'paid')) {
+    const next = rows
+      .map(({ payment }) => payment.nextPaymentDate)
+      .sort((a, b) => a.localeCompare(b))[0]
+    return (
+      <div className="chloe-note">
+        <Chloe mood="napping" size={52} />
+        <p>
+          <strong>Everything is paid.</strong> Chloe is napping until the next charge on{' '}
+          {formatDate(next)}.
+        </p>
+      </div>
+    )
+  }
+
+  return null
 }
 
 export default function Dashboard({ user }) {
@@ -191,7 +239,9 @@ export default function Dashboard({ user }) {
   return (
     <main>
       <header className="topbar">
-        <h1>Subscription Tracker</h1>
+        <h1>
+          <Logo size={40} />
+        </h1>
         <div className="topbar-account">
           <span className="muted">{user.email}</span>
           <RemindersToggle uid={user.uid} onMessage={setNotice} />
@@ -201,10 +251,12 @@ export default function Dashboard({ user }) {
         </div>
       </header>
 
+      {hasSubscriptions && <ChloeNote rows={rows} />}
+
       {!isOnline && (
         <p className="page-message" role="status">
-          You're offline. Changes show here now and are sent when you reconnect, so keep this tab
-          open until then.
+          You're offline. Changes show here now and are sent when you reconnect, so keep{' '}
+          {isNativeApp ? 'the app' : 'this tab'} open until then.
         </p>
       )}
       {loadFailed && (
@@ -219,12 +271,15 @@ export default function Dashboard({ user }) {
       <div className="overview">
         {hasSubscriptions ? (
           <ExpenseSummary subscriptions={subscriptions} />
+        ) : subscriptions === null ? (
+          <p className="muted">{!loadFailed && 'Loading…'}</p>
         ) : (
-          <p className="muted">
-            {subscriptions === null
-              ? !loadFailed && 'Loading…'
-              : 'No subscriptions yet. Add your first one to see what you spend.'}
-          </p>
+          <div className="empty-state">
+            <Chloe mood="curious" size={88} />
+            <p className="muted">
+              No subscriptions yet. Add your first one and Chloe will keep an eye on when it's due.
+            </p>
+          </div>
         )}
         <button type="button" ref={addButtonRef} onClick={() => setEditing('new')}>
           Add subscription

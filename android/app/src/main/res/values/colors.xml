@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- The paper color in src/index.css. Shows behind the status and navigation bars. -->
+    <color name="app_paper">#EEF0F7</color>
+    <!-- The accent color in src/index.css. Tints reminders in the notification shade. -->
+    <color name="app_accent">#3A3CC9</color>
+</resources>

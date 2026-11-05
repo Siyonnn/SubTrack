@@ -6,7 +6,7 @@
 import { cert, initializeApp } from 'firebase-admin/app'
 import { getFirestore } from 'firebase-admin/firestore'
 import { getMessaging } from 'firebase-admin/messaging'
-import { dateInTimeZone, remindersFor } from '../src/lib/reminders.js'
+import { dateInTimeZone, messageFor, remindersFor } from '../src/lib/reminders.js'
 
 if (!process.env.FIREBASE_SERVICE_ACCOUNT) {
   console.error(
@@ -22,7 +22,7 @@ const db = getFirestore()
 const messaging = getMessaging()
 const now = new Date()
 
-// Firebase reports these for a browser that turned off notifications or no longer exists.
+// Firebase reports these for a browser or phone that turned off notifications or no longer exists.
 const GONE = new Set([
   'messaging/registration-token-not-registered',
   'messaging/invalid-registration-token',
@@ -53,7 +53,8 @@ for (const device of devices.docs) {
     const reminders = remindersFor(await subscriptionsOf(device.ref.parent.parent), today)
     if (reminders.length === 0) continue
 
-    const messages = reminders.map((reminder) => ({ token: device.id, data: { ...reminder, url: '/' } }))
+    const platform = device.get('platform')
+    const messages = reminders.map((reminder) => messageFor(reminder, device.id, platform))
     const result = await messaging.sendEach(messages, dryRun)
     sent += result.successCount
 

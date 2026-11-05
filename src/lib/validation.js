@@ -3,6 +3,11 @@ import { formatDate } from './format.js'
 
 export const MAX_PRICE = 1_000_000
 
+// An uploaded picture is stored inside the subscription as a data: link. imageFile.js shrinks it
+// to a few kilobytes; this cap, also in firestore.rules, keeps a subscription well within
+// Firestore's 1 MB limit for a record.
+export const MAX_IMAGE_LENGTH = 100_000
+
 // Older dates would start a subscription dozens of periods overdue.
 export function earliestFirstDueDate(today = todayString()) {
   return addCycles(today, 'monthly', -3)
@@ -17,6 +22,12 @@ function isValidUrl(value) {
   }
 }
 
+// An uploaded picture, or a web link saved before pictures could be uploaded.
+function isValidImage(value) {
+  if (value.length > MAX_IMAGE_LENGTH) return false
+  return /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/]+=*$/.test(value) || isValidUrl(value)
+}
+
 // Returns one message per invalid field. An empty object means the values are valid.
 export function validateSubscription(values, minDate) {
   const errors = {}
@@ -25,8 +36,8 @@ export function validateSubscription(values, minDate) {
   if (!values.subscriptionName.trim()) {
     errors.subscriptionName = 'Enter a name for the subscription.'
   }
-  if (values.image.trim() && !isValidUrl(values.image.trim())) {
-    errors.image = 'Enter a full link starting with http:// or https://, or leave this blank.'
+  if (values.image.trim() && !isValidImage(values.image.trim())) {
+    errors.image = 'This picture could not be used. Choose another one, or remove it.'
   }
   if (values.price === '' || !Number.isFinite(price) || price <= 0) {
     errors.price = 'Enter a price greater than 0.'
