@@ -26,6 +26,25 @@ const MOODS = {
   napping: { tilt: 'translate(-10 8) rotate(8)', ears: -4, brows: [[-22, -30, 0], [22, -30, 0]], eyes: 'closed', mouth: 'sleepy' },
   happy: { tilt: 'translate(0 8) rotate(-6)', ears: 12, brows: [[-22, -34, 0], [22, -34, 0]], eyes: 'joy', mouth: 'open' },
   sad: { tilt: 'rotate(4)', ears: -10, brows: [[-22, -32, 22], [22, -32, -22]], eyes: 'squeezed', mouth: 'cry' },
+  // Paws over her eyes, such as while a password is typed. Now and then she peeks.
+  shy: { tilt: 'translate(0 4) rotate(-4)', ears: -8, brows: [[-22, -38, 10], [22, -38, -10]], eyes: 'open', look: [0, 2], mouth: 'smile', paws: true },
+}
+
+// Her front paws, raised over her eyes: the foot from her standing legs, held up.
+function Paws() {
+  return (
+    <g fill={TAN} stroke={INK} strokeWidth="4" strokeLinejoin="round">
+      {[-1, 1].map((side) => (
+        <g key={side} className={side < 0 ? 'chloe-paw chloe-paw-peek' : 'chloe-paw'}>
+          <g transform={`translate(${side * 24} -6) rotate(${side * -12})`}>
+            <rect x="-22" y="-14" width="44" height="28" rx="14" stroke={WHITE} strokeWidth="9" />
+            <rect x="-22" y="-14" width="44" height="28" rx="14" />
+            <path d="M -7 -13 V -4 M 7 -13 V -4" fill="none" strokeWidth="3" strokeLinecap="round" />
+          </g>
+        </g>
+      ))}
+    </g>
+  )
 }
 
 // A four-pointed sparkle, as in the celebrating drawing.
@@ -149,6 +168,7 @@ function Head({ mood, transform, ids }) {
         <ellipse cx="0" cy="17" rx="13.5" ry="9.5" fill={INK} />
         <ellipse cx="-4" cy="13.5" rx="4" ry="2.3" fill={WHITE} />
       </g>
+      {m.paws && <Paws />}
       {mood === 'napping' && (
         <g className="chloe-snot">
           <circle cx="24" cy="24" r="9" fill={WHITE} stroke={INK} strokeWidth="3" />
@@ -264,9 +284,9 @@ function useLookAtPointer(ref, enabled) {
 }
 
 // What both drawings share: the pointer, tapping, and perking up when her mood changes.
-function useChloe(mood) {
+function useChloe(mood, look) {
   const ref = useRef(null)
-  useLookAtPointer(ref, MOODS[mood].eyes === 'open' || MOODS[mood].eyes === 'wide')
+  useLookAtPointer(ref, !look && (MOODS[mood].eyes === 'open' || MOODS[mood].eyes === 'wide'))
 
   // Counts taps, so each one draws a fresh heart. Resets once she has finished wiggling.
   const [boops, setBoops] = useState(0)
@@ -292,6 +312,8 @@ function useChloe(mood) {
     ids,
     wakes,
     boops,
+    // Set on a group rather than the svg, which the pointer code above writes to.
+    lookStyle: look ? { '--look-x': `${look[0]}px`, '--look-y': `${look[1]}px` } : undefined,
     stageKey: moodChanged ? mood : 'first',
     stageClass: `chloe-stage ${moodChanged ? 'is-entering' : ''}`,
     svgClass: (extra) => `chloe chloe-${mood} ${boops ? 'is-booped' : ''} ${extra}`,
@@ -304,11 +326,12 @@ function useChloe(mood) {
 
 const HEART = 'M150 62 C138 52 136 44 142 40 C146 37 150 40 150 44 C150 40 154 37 158 40 C164 44 162 52 150 62 Z'
 
-// Chloe's head. mood: 'curious' | 'alert' | 'thinking' | 'napping' | 'happy' | 'sad'.
+// Chloe's head. mood: 'curious' | 'alert' | 'thinking' | 'napping' | 'happy' | 'sad' | 'shy'.
 // Each mood has its own idle animation in index.css. Tapping her makes her wiggle.
+// look: [x, y] to point her eyes somewhere (a few units either way) instead of at the pointer.
 // Decorative: the text next to her always says the same thing.
-export function Chloe({ mood = 'curious', size = 72, className = '' }) {
-  const c = useChloe(mood)
+export function Chloe({ mood = 'curious', size = 72, className = '', look }) {
+  const c = useChloe(mood, look)
   // Places the artwork's head in a 200 x 200 box, leaving room above for her hat and Z's.
   const place = 'translate(100 96) scale(1.05)'
   return (
@@ -322,7 +345,7 @@ export function Chloe({ mood = 'curious', size = 72, className = '' }) {
       onPointerDown={c.onPointerDown}
     >
       <g key={c.stageKey} className={c.stageClass}>
-        <g key={c.wakes} className="chloe-body">
+        <g key={c.wakes} className="chloe-body" style={c.lookStyle}>
           <g transform={place}>
             <Head mood={mood} ids={c.ids} />
           </g>
